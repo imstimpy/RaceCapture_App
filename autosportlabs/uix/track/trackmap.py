@@ -222,7 +222,9 @@ class TrackMap(Widget):
                 self._marker_locations[key] = Line(circle=(scaled_point.x, scaled_point.y, marker_size), width=marker_size, closed=True)
 
          
-    def setTrackPoints(self, geoPoints):
+    def setTrackPoints(self, geoPoints=None):
+        ''' Set or clear the track using geographic coordinates.
+        '''
         self.gen_map_points(geoPoints)
         self.update_map()
         
@@ -250,11 +252,13 @@ class TrackMap(Widget):
         min_XY = Point(-1, -1)
         max_XY = Point(-1, -1)
         
-        for geo_point in geo_points:
-            point = self._project_point(geo_point)
-            min_XY.x = point.x if min_XY.x == -1 else min(min_XY.x, point.x)
-            min_XY.y = point.y if min_XY.y == -1 else min(min_XY.y, point.y)
-            points.append(point);
+        # no geo_points means no track
+        if geo_points != None:
+            for geo_point in geo_points:
+                point = self._project_point(geo_point)
+                min_XY.x = point.x if min_XY.x == -1 else min(min_XY.x, point.x)
+                min_XY.y = point.y if min_XY.y == -1 else min(min_XY.y, point.y)
+                points.append(point);
         
         # now, we need to keep track the max X and Y values
         for point in points:
