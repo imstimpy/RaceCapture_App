@@ -105,6 +105,7 @@ class SessionBrowser(AnchorLayout):
     
     def __init__(self, **kwargs):
         super(SessionBrowser, self).__init__(**kwargs)
+        self.register_event_type('on_lap_select')
         self.register_event_type('on_lap_selected')
         accordion = Accordion(orientation='vertical', size_hint=(1.0, None))
         sv = ScrollContainer(size_hint=(1.0, 1.0), do_scroll_x=False)
@@ -143,7 +144,7 @@ class SessionBrowser(AnchorLayout):
 
             self.sessions = sessions
             self.ids.session_alert.text = '' if session else 'No Sessions'
-            # Trigger a reaload for no particular lap.
+            # Hide the map.
             self.dispatch('on_lap_selected', None, False)
                 
         except Exception as e:
@@ -213,27 +214,35 @@ class SessionBrowser(AnchorLayout):
         lapitem.bind(on_press=self.lap_selected)
         self.current_laps[source_key] = lapitem
 
+    def on_lap_select(self, *args):
+        ''' Pre-notification that a lap will be selected.
+        '''
+        pass
+
     def on_lap_selected(self, *args):
+        ''' Post-notification that a lap was selected.
+        '''
         pass
     
     def lap_selected(self, instance):
         self._select_lap(instance)
     
     def _select_lap(self, instance):
-        ''' Select a lap within a lapping session.
+        ''' Select or de-select a lap.
         '''
         selected = (instance.state == 'down')
-        # If selected lap is from a new session, clear all old session laps
-        if selected and (self.last_selected_session != instance.session):
-          self.clear_selected_laps()
-
+        # The lap selection is about to change.
         source_ref = SourceRef(instance.lap, instance.session)
+        self.dispatch('on_lap_select', source_ref, selected)
+
+        # Add to or remove lap from the list of selected laps.
         source_key = str(source_ref)
         if selected:
             self.selected_laps[source_key] = instance
         else:
             self.selected_laps.pop(source_key, None)
         self.last_selected_session = instance.session
+        # The lap selection has changed.
         self.dispatch('on_lap_selected', source_ref, selected)
             
     def clear_sessions(self):
@@ -241,7 +250,7 @@ class SessionBrowser(AnchorLayout):
         self._accordion.clear_widgets()
 
     def clear_selected_laps(self):
-        ''' Clear and de-select all selected maps.
+        ''' Clear and de-select all selected laps.
         '''
         # Remove each selected lap and de-select it
         for source_key in self.selected_laps.keys():
@@ -250,7 +259,6 @@ class SessionBrowser(AnchorLayout):
             lapitem = self.current_laps.get(source_key)
             lapitem.state = 'normal'
             self.dispatch('on_lap_selected', source_ref, False)
-        self.dispatch('on_lap_selected', None, False)
  
     def select_lap(self, session_id, lap_id, selected):
         source_ref = SourceRef(lap_id, session_id)
