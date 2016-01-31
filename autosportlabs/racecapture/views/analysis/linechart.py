@@ -1,3 +1,22 @@
+#
+# Race Capture App
+#
+# Copyright (C) 2014-2016 Autosport Labs
+#
+# This file is part of the Race Capture App
+#
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# See the GNU General Public License for more details. You should
+#have received a copy of the GNU General Public License along with
+#this code. If not, see <http://www.gnu.org/licenses/>.
 from autosportlabs.racecapture.views.analysis.analysiswidget import ChannelAnalysisWidget
 from autosportlabs.racecapture.views.analysis.markerevent import MarkerEvent
 from autosportlabs.uix.color.colorsequence import ColorSequence
@@ -188,22 +207,22 @@ class LineChart(ChannelAnalysisWidget):
         
         self.dispatch_marker(pos[0], pos[1])
 
-    def remove_channel(self, channel, lap_ref):
+    def remove_channel(self, channel, source_ref):
         remove = []
         for channel_plot in self._channel_plots.itervalues():
-            if channel_plot.channel == channel and str(lap_ref) == str(channel_plot.sourceref):
+            if channel_plot.channel == channel and str(source_ref) == str(channel_plot.sourceref):
                 remove.append(channel_plot)
         
         for channel_plot in remove:
             self.ids.chart.remove_plot(channel_plot.plot)
             del(self._channel_plots[str(channel_plot)])
     
-    def _add_channels_results(self, query_data):
+    def _add_channels_results(self, channels, query_data):
         try:
             distance_data_values = query_data['Distance']
-            for key in [k for k in query_data.iterkeys() if k != 'Distance']:
+            for channel in channels:
                 chart = self.ids.chart
-                channel_data_values = query_data[key]
+                channel_data_values = query_data[channel]
                 
                 key = channel_data_values.channel + str(channel_data_values.source)
                 plot = SmoothLinePlot(color=self.color_sequence.get_color(key))
@@ -241,8 +260,9 @@ class LineChart(ChannelAnalysisWidget):
         finally:
             ProgressSpinner.decrement_refcount()
 
-    def add_channels(self, channels, lap_ref):
+    def add_channels(self, channels, source_ref):
         ProgressSpinner.increment_refcount()
         def get_results(results):
-            Clock.schedule_once(lambda dt: self._add_channels_results(results))
-        self.datastore.get_channel_data(lap_ref, ['Distance'] + channels, get_results)
+            #clone the incoming list of channels and pass it to the handler
+            Clock.schedule_once(lambda dt: self._add_channels_results(channels[:], results))
+        self.datastore.get_channel_data(source_ref, ['Distance'] + channels, get_results)
