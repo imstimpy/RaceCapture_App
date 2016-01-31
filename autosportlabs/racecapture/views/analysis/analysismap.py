@@ -102,30 +102,24 @@ class AnalysisMap(AnalysisWidget):
             except:
                 pass #no scrollwheel support
         
-    def select_track(self, latitude, longitude):
-        ''' Load a nearby track map using geographic coordinates.
+    def select_map(self, latitude, longitude):
+        ''' Load a track by finding it using nearby geographic coordinates.
 
         Args:
             latitude: reference north/south location
             longitude: reference west/east location
-
-        Return: True if track selection was changed; False if selection was not
-            changed.
         '''
         if self.track_manager:
             point = GeoPoint.fromPoint(latitude, longitude)
             track = self.track_manager.find_nearby_track(point)
-            if track != self.track:
+            if track != None:
                 self.ids.track.setTrackPoints(track.map_points)
                 self.track = track
-                return True
 
-        return False
-
-    def clear_track(self):
+    def clear_map(self):
         ''' Clear the track map from the view.
         '''
-        self.ids.track.setTrackPoints([])
+        self.ids.track.setTrackPoints()
         self.track = None
 
     def remove_reference_mark(self, source):

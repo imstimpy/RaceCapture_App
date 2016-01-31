@@ -46,7 +46,6 @@ class AnalysisView(Screen):
         self._databus = kwargs.get('dataBus')
         self._settings = kwargs.get('settings') 
         self._track_manager = kwargs.get('track_manager')
-        self.ids.sessions_view.bind(on_lap_select=self.lap_select)
         self.ids.sessions_view.bind(on_lap_selected=self.lap_selected)
         self.ids.channelvalues.color_sequence = self._color_sequence
         self.ids.mainchart.color_sequence = self._color_sequence
@@ -56,32 +55,13 @@ class AnalysisView(Screen):
     def on_sessions(self, instance, value):
         self.ids.channelvalues.sessions = value
         
-    def lap_select(self, instance, source_ref, selected):
-        ''' Load the track for a new lap selection.
-        
-        If a lap selection is from a different track, clear all lap selections.
-
-        Args:
-            source_ref: Lap reference to be shown/hidden.
-            selected: Is the lap reference selected?
-        '''
-        if selected:
-            session = source_ref.session
-            lat_avg, lon_avg = self._datastore.get_location_center(
-                [session])
-            analysis_map = self.ids.analysismap
-            track_selected = analysis_map.select_track(lat_avg, lon_avg)
-            if track_selected:
-                sessions_view = self.ids.sessions_view
-                sessions_view.clear_selected_laps()
-
-
     def lap_selected(self, instance, source_ref, selected):
-        ''' Either show or hide a lap, or hide the map.
+        ''' Either select or de-select a lap, or de-select all laps.
 
         Args:
-            source_ref: Lap reference to show/hide or None to hide the map.
-            selected: Is the lap reference selected?
+            source_ref: Lap reference to select/de-select a lap or None to
+                de-select all laps.
+            selected: Is the lap selected or not selected.
         '''
         if source_ref:
             source_key = str(source_ref)
@@ -136,12 +116,12 @@ class AnalysisView(Screen):
             if not analysis_map.track:
                 lat_avg, lon_avg = self._datastore.get_location_center(
                     [session])
-                analysis_map.select_track(lat_avg, lon_avg)
+                analysis_map.select_map(lat_avg, lon_avg)
         else:
             # If no laps are selected, unload track.
             sessions_view = self.ids.sessions_view
             if len(sessions_view.selected_laps) == 0 and analysis_map.track:
-                analysis_map.clear_track()
+                analysis_map.clear_map()
 
     def open_datastore(self):
         pass
