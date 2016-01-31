@@ -211,7 +211,12 @@ class SessionBrowser(AnchorLayout):
         popup = editor_popup('Edit Session', session_editor, _on_answer)
     
     def delete_session(self, instance, id):
-        ''' Delete a lapping session and clear assocated lap selections.
+        '''
+        Delete a lapping session and clear assocated lap selections.
+        :param instance Lap that has been selected or de-selected.
+        :type instance LapItemButton
+        :param id Unique session identifier.
+        :type id int
         '''
         try:
             # If deleted session was selected, clear all old session laps
@@ -235,12 +240,14 @@ class SessionBrowser(AnchorLayout):
         self.current_laps[source_key] = lapitem
 
     def on_lap_select(self, *args):
-        ''' Pre-notification that a lap will be selected.
+        '''
+        Pre-notification that a lap will be selected.
         '''
         pass
 
     def on_lap_selected(self, *args):
-        ''' Post-notification that a lap was selected.
+        '''
+        Post-notification that a lap was selected.
         '''
         pass
     
@@ -248,7 +255,10 @@ class SessionBrowser(AnchorLayout):
         self._select_lap(instance)
     
     def _select_lap(self, instance):
-        ''' Select or de-select a lap.
+        '''
+        Select or de-select a lap.
+        :param instance Lap that has been selected or de-selected.
+        :type instance LapItemButton
         '''
         selected = (instance.state == 'down')
         # The lap selection is about to change.
@@ -270,7 +280,8 @@ class SessionBrowser(AnchorLayout):
         self._accordion.clear_widgets()
 
     def clear_selected_laps(self):
-        ''' Clear and de-select all selected laps.
+        '''
+        Clear and de-select all selected laps.
         '''
         # Remove each selected lap and de-select it
         for source_key in self.selected_laps.keys():

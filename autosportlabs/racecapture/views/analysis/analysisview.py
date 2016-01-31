@@ -76,13 +76,14 @@ class AnalysisView(Screen):
         self.ids.channelvalues.sessions = value
         
     def lap_select(self, instance, source_ref, selected):
-        ''' Load the track for a new lap selection.
+        '''
+        Load the track for a new lap selection.
         
         If a lap selection is from a different track, clear all lap selections.
-
-        Args:
-            source_ref: Lap reference to be shown/hidden.
-            selected: Is the lap reference selected?
+        :param source_ref Lap reference to be shown/hidden.
+        :type source_ref SourceRef
+        :param selected Is the lap reference being selected or de-selected?
+        :type selected bool
         '''
         if selected:
             session = source_ref.session
@@ -96,11 +97,12 @@ class AnalysisView(Screen):
 
 
     def lap_selected(self, instance, source_ref, selected):
-        ''' Either show or hide a lap, or hide the map.
-
-        Args:
-            source_ref: Lap reference to show/hide or None to hide the map.
-            selected: Is the lap reference selected?
+        '''
+        Either show or hide a lap, or hide the map.
+        :param source_ref Lap reference to show/hide or None to hide the map.
+        :type source_ref SourceRef
+        :param selected Is the lap reference being selected or de-selected?
+        :type selected bool
         '''
         if source_ref:
             source_key = str(source_ref)
@@ -143,11 +145,11 @@ class AnalysisView(Screen):
             self.ids.channelvalues.update_reference_mark(source, marker.data_index)
                           
     def _sync_analysis_map(self, session=None):
-        ''' Load a track map for the given session/lap.
-
-        Args:
-            session: Lapping session. If the session is None, the track map is
-                cleared.
+        '''
+        Load a track map for the given session/lap.
+        :param session Lapping session. If the session is None, the track map
+            is cleared.
+        :type session Session
         '''
         analysis_map = self.ids.analysismap
         if session:

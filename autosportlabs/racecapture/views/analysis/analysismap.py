@@ -261,7 +261,8 @@ class AnalysisMap(AnalysisWidget):
         return False
 
     def clear_track(self):
-        ''' Clear the track map from the view.
+        '''
+        Clear the track map from the view.
         '''
         self.ids.track.setTrackPoints([])
         self.ids.track_name.text = ''
