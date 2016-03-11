@@ -103,7 +103,7 @@ class TrackMap(Widget):
 
     def setTrackPoints(self, geoPoints):
         '''
-        Set the points for the track map
+        Set or clear the track using geographic coordinates.
         :param geoPoints The list of points for the map
         :type geoPoints list
         '''
@@ -350,7 +350,7 @@ class TrackMap(Widget):
                 scaled_point = self._scale_point(marker_point, self.height, left, bottom)
                 Color(*marker_point.color)
                 self._marker_locations[key] = Line(circle=(scaled_point.x, scaled_point.y, marker_size), width=marker_size, closed=True)
-        
+
     def _offset_track_point(self, point):
         point.x = point.x - self._min_XY.x
         point.y = point.y - self._min_XY.y
@@ -375,6 +375,7 @@ class TrackMap(Widget):
         min_XY = Point(-1, -1)
         max_XY = Point(-1, -1)
         
+        # no geo_points means no track
         for geo_point in geo_points:
             point = self._project_point(geo_point)
             min_XY.x = point.x if min_XY.x == -1 else min(min_XY.x, point.x)

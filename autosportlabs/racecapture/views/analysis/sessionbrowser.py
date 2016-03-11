@@ -125,9 +125,11 @@ class SessionBrowser(AnchorLayout):
     
     def __init__(self, **kwargs):
         super(SessionBrowser, self).__init__(**kwargs)
+        self.register_event_type('on_lap_select')
         self.register_event_type('on_lap_selected')
         accordion = Accordion(orientation='vertical', size_hint=(1.0, None))
         sv = ScrollContainer(size_hint=(1.0, 1.0), do_scroll_x=False)
+        self.last_selected_session = -1
         self.selected_laps = {}
         self.current_laps = {}
         sv.add_widget(accordion)
@@ -162,6 +164,8 @@ class SessionBrowser(AnchorLayout):
 
             self.sessions = sessions
             self.ids.session_alert.text = '' if session else 'No Sessions'
+            # Hide the map.
+            self.dispatch('on_lap_selected', None, False)
                 
         except Exception as e:
             Logger.error('AnalysisView: unable to fetch laps: {}\n\{}'.format(e, traceback.format_exc()))            
@@ -207,7 +211,19 @@ class SessionBrowser(AnchorLayout):
         popup = editor_popup('Edit Session', session_editor, _on_answer)
     
     def delete_session(self, instance, id):
+        '''
+        Delete a lapping session and clear assocated lap selections.
+        :param instance Lap that has been selected or de-selected.
+        :type instance LapItemButton
+        :param id Unique session identifier.
+        :type id int
+        '''
         try:
+            # If deleted session was selected, clear all old session laps
+            if self.last_selected_session == id:
+                self.clear_selected_laps()
+                self.last_selected_session = -1
+
             self.datastore.delete_session(id)
             Logger.info('SessionBrowser: Session {} deleted'.format(id))
             self.refresh_session_list()
@@ -223,26 +239,58 @@ class SessionBrowser(AnchorLayout):
         lapitem.bind(on_press=self.lap_selected)
         self.current_laps[source_key] = lapitem
 
+    def on_lap_select(self, *args):
+        '''
+        Pre-notification that a lap will be selected.
+        '''
+        pass
+
     def on_lap_selected(self, *args):
+        '''
+        Post-notification that a lap was selected.
+        '''
         pass
     
     def lap_selected(self, instance):
         self._select_lap(instance)
     
     def _select_lap(self, instance):
-        selected = instance.state == 'down'
+        '''
+        Select or de-select a lap.
+        :param instance Lap that has been selected or de-selected.
+        :type instance LapItemButton
+        '''
+        selected = (instance.state == 'down')
+        # The lap selection is about to change.
         source_ref = SourceRef(instance.lap, instance.session)
-        self.dispatch('on_lap_selected', source_ref, selected)
+        self.dispatch('on_lap_select', source_ref, selected)
+
+        # Add to or remove lap from the list of selected laps.
         source_key = str(source_ref)
         if selected:
             self.selected_laps[source_key] = instance
         else:
             self.selected_laps.pop(source_key, None)
+        self.last_selected_session = instance.session
+        # The lap selection has changed.
+        self.dispatch('on_lap_selected', source_ref, selected)
             
     def clear_sessions(self):
         self.current_laps = {}
         self._accordion.clear_widgets()
-        
+
+    def clear_selected_laps(self):
+        '''
+        Clear and de-select all selected laps.
+        '''
+        # Remove each selected lap and de-select it
+        for source_key in self.selected_laps.keys():
+            lapitem = self.selected_laps.pop(source_key, None)
+            source_ref = SourceRef(lapitem.lap, lapitem.session)
+            lapitem = self.current_laps.get(source_key)
+            lapitem.state = 'normal'
+            self.dispatch('on_lap_selected', source_ref, False)
+ 
     def select_lap(self, session_id, lap_id, selected):
         source_ref = SourceRef(lap_id, session_id)
         source_key = str(source_ref)

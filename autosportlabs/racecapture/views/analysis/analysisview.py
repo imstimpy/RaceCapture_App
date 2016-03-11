@@ -65,6 +65,7 @@ class AnalysisView(Screen):
         self._databus = kwargs.get('dataBus')
         self._settings = kwargs.get('settings') 
         self._track_manager = kwargs.get('track_manager')
+        self.ids.sessions_view.bind(on_lap_select=self.lap_select)
         self.ids.sessions_view.bind(on_lap_selected=self.lap_selected)
         self.ids.channelvalues.color_sequence = self._color_sequence
         self.ids.mainchart.color_sequence = self._color_sequence
@@ -74,21 +75,57 @@ class AnalysisView(Screen):
     def on_sessions(self, instance, value):
         self.ids.channelvalues.sessions = value
         
-    def lap_selected(self, instance, source_ref, selected):
-        source_key = str(source_ref)
+    def lap_select(self, instance, source_ref, selected):
+        '''
+        Load the track for a new lap selection.
+        
+        If a lap selection is from a different track, clear all lap selections.
+        :param source_ref Lap reference to be shown/hidden.
+        :type source_ref SourceRef
+        :param selected Is the lap reference being selected or de-selected?
+        :type selected bool
+        '''
         if selected:
-            self.ids.mainchart.add_lap(source_ref)
-            self.ids.channelvalues.add_lap(source_ref)
-            map_path_color = self._color_sequence.get_color(source_key)
-            self.ids.analysismap.add_reference_mark(source_key, map_path_color)
-            self._sync_analysis_map(source_ref.session)
-            self._datastore.get_location_data(source_ref, lambda x: self.ids.analysismap.add_map_path(source_ref, x, map_path_color))
+            session = source_ref.session
+            lat_avg, lon_avg = self._datastore.get_location_center(
+                [session])
+            analysis_map = self.ids.analysismap
+            track_selected = analysis_map.select_track(lat_avg, lon_avg)
+            if track_selected:
+                sessions_view = self.ids.sessions_view
+                sessions_view.clear_selected_laps()
 
+
+    def lap_selected(self, instance, source_ref, selected):
+        '''
+        Either show or hide a lap, or hide the map.
+        :param source_ref Lap reference to show/hide or None to hide the map.
+        :type source_ref SourceRef
+        :param selected Is the lap reference being selected or de-selected?
+        :type selected bool
+        '''
+        if source_ref:
+            source_key = str(source_ref)
+            if selected:
+                self.ids.mainchart.add_lap(source_ref)
+                self.ids.channelvalues.add_lap(source_ref)
+                map_path_color = self._color_sequence.get_color(source_key)
+                self.ids.analysismap.add_reference_mark(source_key,
+                    map_path_color)
+                self._sync_analysis_map(source_ref.session)
+                self._datastore.get_location_data(source_ref,
+                    lambda x: self.ids.analysismap.add_map_path(source_ref, x,
+                    map_path_color))
+
+            else:
+                self.ids.mainchart.remove_lap(source_ref)
+                self.ids.channelvalues.remove_lap(source_ref)
+                self.ids.analysismap.remove_reference_mark(source_key)
+                self.ids.analysismap.remove_map_path(source_ref)
+                self.ids.analysismap.remove_heat_values(source_ref)
+                self._sync_analysis_map(source_ref.session)
         else:
-            self.ids.mainchart.remove_lap(source_ref)
-            self.ids.channelvalues.remove_lap(source_ref)
-            self.ids.analysismap.remove_reference_mark(source_key)
-            self.ids.analysismap.remove_map_path(source_ref)
+            self._sync_analysis_map()
     
     def on_tracks_updated(self, track_manager):
         self.ids.analysismap.track_manager = track_manager
@@ -107,11 +144,25 @@ class AnalysisView(Screen):
             self.ids.analysismap.update_reference_mark(source, point)
             self.ids.channelvalues.update_reference_mark(source, marker.data_index)
                           
-    def _sync_analysis_map(self, session):
+    def _sync_analysis_map(self, session=None):
+        '''
+        Load a track map for the given session/lap.
+        :param session Lapping session. If the session is None, the track map
+            is cleared.
+        :type session Session
+        '''
         analysis_map = self.ids.analysismap
-        if not analysis_map.track:
-            lat_avg, lon_avg = self._datastore.get_location_center([session])
-            analysis_map.select_map(lat_avg, lon_avg)
+        if session:
+            # If no track is loaded, load it.
+            if not analysis_map.track:
+                lat_avg, lon_avg = self._datastore.get_location_center(
+                    [session])
+                analysis_map.select_track(lat_avg, lon_avg)
+        else:
+            # If no laps are selected, unload track.
+            sessions_view = self.ids.sessions_view
+            if len(sessions_view.selected_laps) == 0 and analysis_map.track:
+                analysis_map.clear_track()
 
     def open_datastore(self):
         pass

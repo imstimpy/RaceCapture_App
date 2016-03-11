@@ -186,13 +186,20 @@ class AnalysisMap(AnalysisWidget):
         self._select_track(track)
     
     def _select_track(self, track):
-        if track != None:
+        '''
+        Select the track into the view.
+        :param track The track to select.
+        :type track TrackMap
+        :return True if track selection was changed; False if selection was not
+            changed.
+        '''
+        if track != self.track:
             self.ids.track.setTrackPoints(track.map_points)
+            self.track = track
             self.ids.track_name.text = '{} {}'.format(track.name, '' if track.configuration is None or track.configuration == '' else '({})'.format(track.configuration))
-        else:
-            self.ids.track_name.text = ''
-            self.ids.track.setTrackPoints([])
-        self.track = track
+            return True
+
+        return False
         
     def _customized(self, instance, values):
         self._update_trackmap(values)
@@ -236,18 +243,30 @@ class AnalysisMap(AnalysisWidget):
             except:
                 pass #no scrollwheel support
         
-    def select_map(self, latitude, longitude):
+    def select_track(self, latitude, longitude):
         '''
         Find and display a nearby track by latitude / longitude
-        :param latitude
+        :param latitude reference north/south location
         :type  latitude float
-        :param longitude
+        :param longitude reference west/east location
         :type longitude float 
+        :return True if track selection was changed; False if selection was not
+            changed.
         '''
         if self.track_manager:
             point = GeoPoint.fromPoint(latitude, longitude)
             track = self.track_manager.find_nearby_track(point)
-            self._select_track(track)
+            return self._select_track(track)
+
+        return False
+
+    def clear_track(self):
+        '''
+        Clear the track map from the view.
+        '''
+        self.ids.track.setTrackPoints([])
+        self.ids.track_name.text = ''
+        self.track = None
 
     def remove_reference_mark(self, source):
         self.ids.track.remove_marker(source)
